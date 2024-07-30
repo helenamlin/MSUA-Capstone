@@ -1,4 +1,5 @@
-# MSUA-Capstone
+# Enhancing User Satisfaction in Major U.S. Transit Systems: An Operational Data-Driven Approach
+
 The project "Enhancing User Satisfaction in Major U.S. Transit Systems: An Operational Data-Driven Approach" combined sentiment analysis with operational metrics to provide actionable insights for transit authorities. By integrating data specific to each transit system, this approach went beyond traditional sentiment analysis methods. The project drew from established literature, incorporating methodologies from studies like Haghighi et al. (2018), Gao et al. (2016), and Xu et al. (2017), while emphasizing metrics such as safety, reliability, and capacity.
 
 The regression analysis identified key factors influencing public sentiment toward different transit modes and agencies. The initial model explained 62.6% of the variance in sentiment scores, while the refined stepwise model improved the adjusted R-squared value to 0.707. Significant factors included Total Mechanical Failures, Average Passenger Trip Length (APTL), Total Employee Count, and Average Percent Agency Capital Responsibility (2022). The analysis showed that fewer mechanical issues and shorter trip lengths improved public perception, while a higher employee count and lower capital responsibilities enhanced sentiment.
