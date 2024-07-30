@@ -1,0 +1,1337 @@
+---
+title: "Enhancing User Satisfaction in Major U.S. Transit Systems: An Operational Data-Driven Approach"
+date: "2024-7-20"
+author: "Helena Lindsay"
+output: 
+  html_document:
+    theme: "cosmo"
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE, warning=FALSE, echo=FALSE}
+# Package names
+packages <- c("RedditExtractoR", "anytime", "magrittr", "ggplot2", "dplyr", "tidytext", "tidyverse", "igraph", "ggraph", "tidyr", "wordcloud2", "textdata", "sf", "tmap", "patchwork", "stringr", "glue", "stringi", "tibble")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+install.packages(packages[!installed_packages])
+}
+
+# Load packages
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+## Objective {.tabset}
+
+In recent years, public sentiment and user experience have become pivotal aspects in evaluating the success and efficiency of various services, including the realm of public transit systems. 
+
+This paper delves into the exploration of factors that correlate with sentiments toward key U.S. public transit systems. By examining sentiment data gathered from Reddit, coupled with external tabular data, the study aims to unravel the nuanced interplay between user perceptions and their experiences with these transit systems. The ultimate goal is to identify key areas that significantly impact sentiment, thereby providing valuable shortcuts for optimizing the user experience within the realm of public transportation. 
+
+This research not only contributes to the growing field of sentiment analysis but also offers practical implications for public transit authorities seeking to optimize their services based on existing data coupled with user feedback and sentiments.
+
+
+
+
+```{r, out.width="40%", echo=FALSE}
+
+knitr::include_graphics("/Users/helenalindsay/Documents/Spring_24/transit.jpg")
+```
+
+https://smartasset.com/mortgage/best-cities-for-public-transportation
+
+
+## Reddit Conversations Over the Years {.tabset}
+
+ 
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#, "Washington Metro")#, "MBTA", "SEPTA", "Skyline")
+# 
+# ATL_HR <- find_thread_urls(keywords = "MARTA",
+#                                subreddit = "Atlanta",
+#                                sort_by = 'relevance',
+#                                period = 'all')
+# 
+# ATL_MB <- find_thread_urls(keywords = "MARTA bus",
+#                             #subreddit = "",
+#                             sort_by = 'relevance',
+#                             period = 'all')
+
+# ATL_HR <- ATL_HR[!ATL_HR[, "url"] %in% ATL_MB[, "url"], ]
+
+# Baltimore_HR <- find_thread_urls(keywords = "metro",
+#                               subreddit = "Maryland",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# Baltimore_MB <- find_thread_urls(keywords = "bus",
+#                               subreddit = "Maryland",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+
+# Boston_HR <- find_thread_urls(keywords = "'T'",
+#                               subreddit = "MBTA",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+
+# Boston_MB <- find_thread_urls(keywords = "MBTA bus",
+#                               #subreddit = "MBTA",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+
+# Brooklyn_HR <- find_thread_urls(keywords = "MTA",
+#                            subreddit = "nyc",
+#                            sort_by = 'relevance',
+#                            period = 'all')
+
+# 
+# Brooklyn_MB <- find_thread_urls(keywords = "MTA bus",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+
+
+
+
+# Chicago_HR <- find_thread_urls(keywords = "'L'",
+#                               subreddit = "chicago",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# Chicago_MB <- find_thread_urls(keywords = "CTA bus",
+#                               #subreddit = "chicago",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+#   
+
+# Cleveland_HR <- find_thread_urls(keywords = "RTA",
+#                               subreddit = "cleveland",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# Cleveland_MB <- find_thread_urls(keywords = "RTA bus",
+#                               subreddit = "cleveland",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+
+# Cleveland_HR <- Cleveland_HR[!Cleveland_HR[, "url"] %in% Cleveland_MB[, "url"], ]
+
+
+# 
+# Philly_HR <- find_thread_urls(keywords = "SEPTA",
+#                                sort_by = 'relevance',
+#                                period = 'all')
+# 
+# Philly_MB <- find_thread_urls(keywords = "SEPTA bus",
+#                                sort_by = 'relevance',
+#                                period = 'all')
+
+Philly_HR <- Philly_HR[!Philly_HR[, "url"] %in% Philly_MB[, "url"], ]
+
+
+# LA_HR <- find_thread_urls(keywords = "LA Metro",
+#                                  #subreddit = "transit",
+#                                  sort_by = 'relevance',
+#                                  period = 'all')
+# 
+
+# LA_MB <- find_thread_urls(keywords = "metro bus",
+#                                  subreddit = "LAMetro",
+#                                  sort_by = 'relevance',
+#                                  period = 'all')
+
+
+# Miami_HR <- find_thread_urls(keywords = "metrorail",
+#                               subreddit = "miami",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# Miami_MB <- find_thread_urls(keywords = "bus",
+#                               subreddit = "miami",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# DC_HR <- find_thread_urls(keywords = "dc metro",
+#                               #subreddit = "dc",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+# 
+# DC_MB <- find_thread_urls(keywords = "metrobus",
+#                               subreddit = "washingtondc",
+#                               sort_by = 'relevance',
+#                               period = 'all')
+
+
+#colnames(DC)
+#head(DC)
+save(ATL_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_HR.RData")
+save(ATL_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_MB.RData")
+save(Baltimore_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_HR.RData")
+save(Baltimore_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_MB.RData")
+save(Boston_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_HR.RData")
+save(Boston_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_MB.RData")
+save(Brooklyn_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_HR.RData")
+save(Brooklyn_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_MB.RData")
+save(Chicago_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_HR.RData")
+save(Chicago_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_MB.RData")
+save(Cleveland_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_HR.RData")
+save(Cleveland_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_MB.RData")
+save(LA_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/LA_HR.RData")
+save(LA_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/LA_MB.RData")
+save(Miami_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_HR.RData")
+save(Miami_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_MB.RData")
+save(Philly_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_HR.RData")
+save(Philly_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_MB.RData")
+save(DC_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/DC_HR.RData")
+save(DC_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/DC_MB.RData")
+
+
+
+
+
+# write.csv(ATL_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_HR.csv", row.names = FALSE)
+# write.csv(ATL_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_MB.csv", row.names = FALSE)
+# write.csv(Baltimore_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_HR.csv", row.names = FALSE)
+# write.csv(Baltimore_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_MB.csv", row.names = FALSE)
+# write.csv(Boston_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_HR.csv", row.names = FALSE)
+# write.csv(Boston_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_MB.csv", row.names = FALSE)
+# write.csv(Brooklyn_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_HR.csv", row.names = FALSE)
+# write.csv(Brooklyn_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_MB.csv", row.names = FALSE)
+# write.csv(Chicago_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_HR.csv", row.names = FALSE)
+# write.csv(Chicago_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_MB.csv", row.names = FALSE)
+# write.csv(Cleveland_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_HR.csv", row.names = FALSE)
+# write.csv(Cleveland_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_MB.csv", row.names = FALSE)
+# write.csv(LA_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/LA_HR.csv", row.names = FALSE)
+# write.csv(LA_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/LA_MB.csv", row.names = FALSE)
+# write.csv(Miami_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_HR.csv", row.names = FALSE)
+# write.csv(Miami_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_MB.csv", row.names = FALSE)
+# write.csv(Philly_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_HR.csv", row.names = FALSE)
+# write.csv(Philly_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_MB.csv", row.names = FALSE)
+# write.csv(DC_HR, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/DC_HR.csv", row.names = FALSE)
+# write.csv(DC_MB, file = "/Users/helenalindsay/Documents/Spring_24/Capstone/DC_MB.csv", row.names = FALSE)
+
+
+```
+
+
+
+Below, the volume of Reddit threads for each city is illustrated. From 2010 to 2024, there is a noticeable increase in conversations over the years, reflecting a growing interest in public transit topics. However, the volume of discussions varies significantly across cities.
+
+For instance, Atlanta has not experienced as significant an increase in thread volume compared to Los Angeles, which shows a sharp rise in conversations. Similarly, Atlanta's total volume of conversations is much lower compared to cities like Baltimore or Miami, which have seen more sustained and higher levels of discussion over the years.
+
+These graphs provide essential context for our analysis, highlighting the dynamic and evolving nature of the Reddit data source. They emphasize how public interest and engagement in public transit topics can differ widely between cities, influenced by local transit developments, policies, and other socio-economic factors. Understanding these trends is crucial for interpreting the sentiment and operational data in our study.
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/ATL_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Baltimore_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Boston_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Chicago_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Cleveland_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Philly_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Brooklyn_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/LA_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/LA_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/Miami_MB.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/DC_HR.RData")
+load("/Users/helenalindsay/Documents/Spring_24/Capstone/DC_MB.RData")
+
+
+
+# Function to create the plot for a city
+create_city_plot <- function(city_data, city_name) {
+  city_data %<>% 
+    mutate(date = as.POSIXct(date_utc)) %>%
+    filter(!is.na(date))
+  
+  city_data %>%
+    ggplot(aes(x = date)) +
+    geom_histogram(color = "black", position = 'stack', binwidth = 60*60*24*7) +
+    stat_density(geom = "line", aes(y = ..scaled..), color = "red") + 
+    scale_x_datetime(date_labels = "%b %y",
+                     breaks = seq(min(city_data$date, na.rm = TRUE), 
+                                  max(city_data$date, na.rm = TRUE), 
+                                  by = "5 year")) + 
+    theme_minimal() +
+    ggtitle(city_name)
+}
+
+# Combine HR and MB data for each city
+combined_ATL <- bind_rows(ATL_HR, ATL_MB)
+combined_Baltimore <- bind_rows(Baltimore_HR, Baltimore_MB)
+combined_Boston <- bind_rows(Boston_HR, Boston_MB)
+combined_Brooklyn <- bind_rows(Brooklyn_HR, Brooklyn_MB)
+combined_Chicago <- bind_rows(Chicago_HR, Chicago_MB)
+combined_Cleveland <- bind_rows(Cleveland_HR, Cleveland_MB)
+combined_LA <- bind_rows(LA_HR, LA_MB)
+combined_Miami <- bind_rows(Miami_HR, Miami_MB)
+combined_Philly <- bind_rows(Philly_HR, Philly_MB)
+combined_DC <- bind_rows(DC_HR, DC_MB)
+
+# Create plots for each combined city data
+atl_plot <- create_city_plot(combined_ATL, "Atlanta")
+baltimore_plot <- create_city_plot(combined_Baltimore, "Baltimore")
+boston_plot <- create_city_plot(combined_Boston, "Boston")
+brooklyn_plot <- create_city_plot(combined_Brooklyn, "Brooklyn")
+chicago_plot <- create_city_plot(combined_Chicago, "Chicago")
+cleveland_plot <- create_city_plot(combined_Cleveland, "Cleveland")
+la_plot <- create_city_plot(combined_LA, "Los Angeles")
+miami_plot <- create_city_plot(combined_Miami, "Miami")
+philly_plot <- create_city_plot(combined_Philly, "Philadelphia")
+dc_plot <- create_city_plot(combined_DC, "Washington")
+
+# Arrange plots using patchwork
+combined_plots <- atl_plot + baltimore_plot + boston_plot + brooklyn_plot + chicago_plot +
+                  cleveland_plot + la_plot + miami_plot + philly_plot + dc_plot
+
+# Display the combined plots
+combined_plots
+
+```
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Define function to process text data
+process_title_data <- function(city_data) {
+  replace_reg <- "http[s]?://[A-Za-z\\d/\\.]+|&amp;|&lt;|&gt;|MARTA\\b|metro\\b|'T'|MTA|'L'|RTA|SEPTA|LA Metro|metrorail|dc metro|metrobus|train|bus|DC|miami"
+  
+  cleaned_data <- city_data %>% 
+    mutate(title = map_chr(title, ~ str_replace_all(., replace_reg, "")), 
+           text = map_chr(text, ~ str_replace_all(., replace_reg, "")), 
+           title_text = str_c(title, text, sep = ". ")) %>%
+    unnest_tokens(word, title, token = "words") %>% 
+    anti_join(stop_words, by = "word") %>% 
+    filter(str_detect(word, "[a-z]"))
+  
+  return(cleaned_data)
+}
+
+# Initialize a list to store results for each city and dataset
+city_results <- list()
+
+# List of cities and their corresponding datasets
+cities <- c("ATL", "Baltimore", "Boston", "Chicago", "Cleveland", "Philly", "Brooklyn", "LA", "Miami", "DC")
+datasets <- c("HR", "MB")
+
+for (city in cities) {
+  for (dataset in datasets) {
+    file_path <- paste0("/Users/helenalindsay/Documents/Spring_24/Capstone/", city, "_", dataset, ".RData")
+    if (file.exists(file_path)) {
+      # Create a new environment and load the data into it
+      env <- new.env()
+      load(file_path, envir = env)
+      
+      # Assume the variable inside the file has the same name as the file (excluding path and extension)
+      file_base <- basename(file_path)
+      variable_name <- gsub(".RData", "", file_base)
+      
+      if (exists(variable_name, envir = env)) {
+        city_data <- get(variable_name, envir = env)
+        
+        # Clean and process the data
+        cleaned_data <- process_title_data(city_data)
+        
+        # Store the cleaned data in the list
+        city_results[[paste(city, dataset, sep = "_")]] <- cleaned_data
+        
+        # Remove city_data to avoid accidental reuse
+        rm(city_data)
+      }
+    }
+  }
+}
+
+# Initialize a list to store cleaned data for each city and dataset
+cleaned_data_list <- list(
+  ATL_HR = city_results$ATL_HR,
+  ATL_MB = city_results$ATL_MB,
+  Baltimore_HR = city_results$Baltimore_HR,
+  Baltimore_MB = city_results$Baltimore_MB,
+  Boston_HR = city_results$Boston_HR,
+  Boston_MB = city_results$Boston_MB,
+  Brooklyn_HR = city_results$Brooklyn_HR,
+  Brooklyn_MB = city_results$Brooklyn_MB,
+  Chicago_HR = city_results$Chicago_HR,
+  Chicago_MB = city_results$Chicago_MB,
+  Cleveland_HR = city_results$Cleveland_HR,
+  Cleveland_MB = city_results$Cleveland_MB,
+  LA_HR = city_results$LA_HR,
+  LA_MB = city_results$LA_MB,
+  Miami_HR = city_results$Miami_HR,
+  Miami_MB = city_results$Miami_MB,
+  Philly_HR = city_results$Philly_HR,
+  Philly_MB = city_results$Philly_MB,
+  DC_HR = city_results$DC_HR,
+  DC_MB = city_results$DC_MB
+)
+
+# cleaned_data_list$Baltimore_MB %>%
+#   count(word, sort = TRUE) %>%
+#   slice(-1) %>%  # Remove the most common word (first row)
+#   top_n(20, n) %>%
+#   mutate(word = reorder(word, n)) %>%
+#   ggplot(aes(x = word, y = n)) +
+#   geom_col() +
+#   xlab(NULL) +
+#   coord_flip() +
+#   labs(x = "Words",
+#        y = "Counts",
+#        title = "Baltimore MB Unique Word Counts")
+
+
+
+```
+
+
+## Bi-gram analysis {.tabset}
+
+**<font color=purple>  </font>**
+
+**<font color=purple>  </font>**
+
+**<font color=purple> </font>**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+replace_reg <- "http[s]?://[A-Za-z\\d/\\.]+|&amp;|&lt;|&gt;"
+
+# Function for n-gram analysis (bigrams)
+analyze_ngrams <- function(city_data, city_name, stop_words, remove_terms = c()) {
+  words_ngram <- city_data %>%
+    select(title_text) %>%
+    unnest_tokens(output = paired_words, input = title_text, token = "ngrams", n = 2)
+  
+  words_ngram_pair <- words_ngram %>%
+    separate(paired_words, c("word1", "word2"), sep = " ")
+  
+  # Filter out words that are not encoded in ASCII and do not contain numeric numbers
+  words_ngram_pair_filtered <- words_ngram_pair %>%
+    filter(!word1 %in% stop_words$word & !word2 %in% stop_words$word) %>%
+    filter(stri_enc_isascii(word1) & stri_enc_isascii(word2)) %>%
+    filter(!word1 %in% remove_terms & !word2 %in% remove_terms) %>%
+    filter(!str_detect(word1, "[0-9]")) %>%
+    filter(!str_detect(word2, "[0-9]"))
+  
+  words_counts <- words_ngram_pair_filtered %>%
+    count(word1, word2) %>%
+    arrange(desc(n))
+  
+  # Save or print the top 100 n-grams
+  top_ngrams <- head(words_counts, 100)
+  
+  return(top_ngrams)
+}
+
+
+
+
+# List of cities and corresponding data
+cities_data <- list(
+  ATL_HR = cleaned_data_list$ATL_HR,
+  ATL_MB = cleaned_data_list$ATL_MB,
+  Baltimore_HR = cleaned_data_list$Baltimore_HR,
+  Baltimore_MB = cleaned_data_list$Baltimore_MB,
+  Boston_HR = cleaned_data_list$Boston_HR,
+  Boston_MB = cleaned_data_list$Boston_MB,
+  Chicago_HR = cleaned_data_list$Chicago_HR,
+  Chicago_MB = cleaned_data_list$Chicago_MB,
+  Cleveland_HR = cleaned_data_list$Cleveland_HR,
+  Cleveland_MB = cleaned_data_list$Cleveland_MB,
+  Philly_HR = cleaned_data_list$Philly_HR,
+  Philly_MB = cleaned_data_list$Philly_MB,
+  Brooklyn_HR = cleaned_data_list$Brooklyn_HR,
+  Brooklyn_MB = cleaned_data_list$Brooklyn_MB,
+  LA_HR = cleaned_data_list$LA_HR,
+  LA_MB = cleaned_data_list$LA_MB,
+  Miami_HR = cleaned_data_list$Miami_HR,
+  Miami_MB = cleaned_data_list$Miami_MB,
+  DC_HR = cleaned_data_list$DC_HR,
+  DC_MB = cleaned_data_list$DC_MB
+)
+
+# List to store n-grams for each city
+ngrams_results <- list()
+
+# Analyze n-grams for each city
+for (city_name in names(cities_data)) {
+  ngrams_results[[city_name]] <- analyze_ngrams(cities_data[[city_name]], city_name, stop_words)
+}
+
+# Function to create word network for top 10 bigrams
+create_word_network <- function(words_counts, min_count = 10, layout = "fr", city_name) {
+  words_counts <- words_counts %>%
+    filter(n >= min_count) %>%
+    top_n(20, wt = n)  # Select top 10 bigrams
+  
+  graph <- graph_from_data_frame(words_counts)
+  
+  p <- ggraph(graph, layout = layout) +
+    geom_edge_link(aes(edge_alpha = .6, edge_width = n / 3)) +  # Adjust edge width
+    geom_node_point(color = "darkslategray4", size = 2) +  # Adjust node size
+    geom_node_text(aes(label = name), vjust = 1) +
+    labs(title = paste("Top 20 Word Network for", city_name), x = "", y = "") +
+    theme_void()  # Remove background
+  
+  return(p)
+}
+
+
+
+```
+
+
+### Atlanta {.tabset}
+
+The bigram analysis of Reddit threads shows significant interest in improving Atlanta's public transit infrastructure. Heavy rail discussions focus on urban development, streetcar extensions, express lanes, and rail stations. Bus-related conversations highlight rapid transit, network redesign, and projects like the Clifton Corridor. These discussions reflect the community's engagement in enhancing urban mobility and connectivity through sustainable development and improved transit options, underscoring the evolving nature of public transit discourse in Atlanta.
+
+#### HR {.tabset}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(kableExtra)
+kable(head(ngrams_results$ATL_HR))
+
+# Plot for ATL_HR
+word_network_ATL_HR <- create_word_network(ngrams_results$ATL_HR, city_name = "ATL_HR")
+word_network_ATL_HR
+
+```
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+ngrams_results$ATL_MB <- analyze_ngrams(cities_data$ATL_MB, "ATL_MB", stop_words, remove_terms = c("pngauto", "webps"))
+
+kable(head(ngrams_results$ATL_MB))
+
+word_network_ATL_MB <- create_word_network(ngrams_results$ATL_MB, city_name = "ATL_MB")
+word_network_ATL_MB
+
+```
+
+### Baltimore {.tabset}
+
+The bigram analysis of Baltimore’s Reddit threads shows heavy rail discussions focusing on metro stations like Silver Spring and the Red Line, highlighting station accessibility and development. Bus-related topics emphasize light rail, school buses, and commuter buses, with a notable interest in Montgomery County and electric school buses. This analysis seem to underscore the community's focus on transit accessibility and sustainable solutions.
+
+#### HR {.tabset}
+
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Baltimore_HR))
+
+word_network_Baltimore_HR <- create_word_network(ngrams_results$Baltimore_HR, city_name = "Baltimore_HR")
+word_network_Baltimore_HR
+
+```
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Baltimore_MB))
+word_network_Baltimore_MB <- create_word_network(ngrams_results$Baltimore_MB, city_name = "Baltimore_MB")
+word_network_Baltimore_MB
+
+```
+
+### Boston {.tabset}
+
+The bigram analysis of Boston's Reddit threads reveals distinct focus areas for heavy rail and bus systems. Heavy rail discussions prominently feature the Green Line, Commuter Rail, and Red Line, with attention to slow zones and line extensions. For buses, the emphasis is on the MBTA bus network, its redesign, and specific lines like the Green, Orange, and Red Lines. This seems to highlight the community’s engagement with improving and expanding Boston’s transit infrastructure.
+
+
+#### HR {.tabset}
+
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Boston_HR))
+word_network_Boston_HR <- create_word_network(ngrams_results$Boston_HR, city_name = "Boston_HR")
+word_network_Boston_HR
+
+```
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Boston_MB))
+word_network_Boston_MB <- create_word_network(ngrams_results$Boston_MB, city_name = "Boston_MB")
+word_network_Boston_MB
+```
+
+
+### Chicago {.tabset}
+
+In Chicago, Reddit discussions about the heavy rail system often center on the Red, Blue, Brown, and Green Lines, with mentions of the Cross-Town and issues like unruly behavior. For buses, the focus is on the CTA bus network and drivers, along with media coverage from CBS News and the Chicago Sun-Times. This reflects the community’s interest in both the operational aspects and media representation of Chicago’s transit systems.
+
+
+#### HR {.tabset}
+
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Chicago_HR))
+word_network_Chicago_HR <- create_word_network(ngrams_results$Chicago_HR, city_name = "Chicago_HR")
+word_network_Chicago_HR
+```
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Chicago_MB))
+word_network_Chicago_MB <- create_word_network(ngrams_results$Chicago_MB, city_name = "Chicago_MB")
+word_network_Chicago_MB
+```
+
+### Cleveland {.tabset}
+
+In Cleveland, Reddit discussions about the heavy rail system prominently feature the Red Line, police department, and Waterfront Line, along with occasional mentions of events like the solar eclipse. Bus-related conversations highlight Public Square, Tower City, and the Red Line, as well as notable locations like University Circle and downtown Cleveland. This shows a community engaged in both daily transit operations and significant local events.
+
+#### HR {.tabset}
+
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Cleveland_HR))
+word_network_Cleveland_HR <- create_word_network(ngrams_results$Cleveland_HR, city_name = "Cleveland_HR")
+word_network_Cleveland_HR
+```
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Cleveland_MB))
+word_network_Cleveland_MB <- create_word_network(ngrams_results$Cleveland_MB, city_name = "Cleveland_MB")
+word_network_Cleveland_MB
+```
+
+
+### Philly {.tabset}
+
+In Philadelphia, discussions about the heavy rail system focus on the master plan, SEPTA Lemoore, and Center City, with notable mentions of the Regional Rail and Transit Police. Meanwhile, conversations about the bus system highlight topics such as the Bus Revolution, transit system challenges, and network redesigns, indicating a community engaged in both infrastructure planning and addressing transit issues.
+
+#### HR {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Philly_HR))
+word_network_Philly_HR <- create_word_network(ngrams_results$Philly_HR, city_name = "Philly_HR")
+word_network_Philly_HR
+```
+
+
+#### MB {.tabset}
+
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Philly_MB))
+word_network_Philly_MB <- create_word_network(ngrams_results$Philly_MB, city_name = "Philly_MB")
+word_network_Philly_MB
+```
+
+### Brooklyn {.tabset}
+
+In discussions about Brooklyn's heavy rail system, key topics include congestion pricing, NYC subway operations, fare evasion, and subway stations. For the bus system, notable topics include the NY Post, Staten Island, articulated doors, and commuter routes. These paired word analyses reflect a strong community focus on both operational issues and policy debates related to public transit in Brooklyn.
+
+#### HR {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Brooklyn_HR))
+word_network_Brooklyn_HR <- create_word_network(ngrams_results$Brooklyn_HR, city_name = "Brooklyn_HR")
+word_network_Brooklyn_HR
+```
+
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Brooklyn_MB))
+word_network_Brooklyn_MB <- create_word_network(ngrams_results$Brooklyn_MB, city_name = "Brooklyn_MB")
+word_network_Brooklyn_MB
+```
+
+### LA {.tabset}
+
+In Los Angeles, heavy rail discussions center on rolling stock, light rail, and the Del Metro system. In contrast, bus-related conversations frequently address San Diego, estimated costs, and Twitter presentations. This analysis reflects varied but significant discussions about both transit infrastructure and administrative matters in Los Angeles.
+
+#### HR {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$LA_HR))
+word_network_LA_HR <- create_word_network(ngrams_results$LA_HR, city_name = "LA_HR")
+word_network_LA_HR
+```
+
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$LA_MB))
+word_network_LA_MB <- create_word_network(ngrams_results$LA_MB, city_name = "LA_MB")
+word_network_LA_MB
+```
+
+### Miami {.tabset}
+
+In Miami, heavy rail discussions primarily focus on Miami-Dade, Tri-Rail, and Metrorail stations, with notable mentions of downtown Miami and public transit. Bus-related conversations emphasize Miami-Dade, Miami Beach, South Beach, and various aspects of public transportation. These analyses indicate a strong focus on local transit infrastructure and service areas in Miami.
+
+
+#### HR {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Miami_HR))
+word_network_Miami_HR <- create_word_network(ngrams_results$Miami_HR, city_name = "Miami_HR")
+word_network_Miami_HR
+```
+
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$Miami_MB))
+word_network_Miami_MB <- create_word_network(ngrams_results$Miami_MB, city_name = "Miami_MB")
+word_network_Miami_MB
+```
+
+### DC {.tabset}
+
+In Washington, D.C., heavy rail discussions feature innovative technologies such as augmented reality and smart glasses alongside core topics like the Washington Metro system and station upgrades. For the bus system, the focus is on metro service improvements and administrative aspects such as SmarTrip cards.
+
+#### HR {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$DC_HR))
+word_network_DC_HR <- create_word_network(ngrams_results$DC_HR, city_name = "DC_HR")
+word_network_DC_HR
+```
+
+
+#### MB {.tabset}
+```{r echo=FALSE, warning=FALSE}
+kable(head(ngrams_results$DC_MB))
+word_network_DC_MB <- create_word_network(ngrams_results$DC_MB, city_name = "DC_MB")
+word_network_DC_MB
+```
+
+
+
+## Sentiment analysis (BERT method) {.tabset}
+
+The BERT method was selected for its demonstrated accuracy and flexibility, as emphasized in the literature review. Unlike traditional NLP approaches like Word2Vec, BERT, a transformer model, captures the contextual meaning of words by considering the entire sentence at once (Bello et al., 2023). Research shows that BERT and other machine learning models outperform traditional lexicon-based methods in terms of accuracy and adaptability across various domains (Birjali et al., 2021; Devika et al., 2016). Consequently, this project prioritized the use of the BERT model for sentiment analysis.
+
+
+After analyzing the sentiment for each of the 200-250 Reddit threads per agency and mode, the average sentiment scores for each agency/mode are shown below. The results reveal a tendency for bus systems (MB) to receive higher sentiment scores (indicating more positive sentiment) compared to heavy rail systems. Additionally, Brooklyn and Philadelphia exhibit higher sentiment scores compared to other cities.
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+# Define file paths for each dataset
+file_paths <- c(
+  ATL_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/ATL_HR_bert.csv',
+  ATL_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/ATL_MB_bert.csv',
+  Baltimore_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Baltimore_HR_bert.csv',
+  Baltimore_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Baltimore_MB_bert.csv',
+  Boston_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Boston_HR_bert.csv',
+  Boston_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Boston_MB_bert.csv',
+  Brooklyn_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Brooklyn_HR_bert.csv',
+  Brooklyn_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Brooklyn_MB_bert.csv',
+  Chicago_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Chicago_HR_bert.csv',
+  Chicago_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Chicago_MB_bert.csv',
+  Cleveland_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Cleveland_HR_bert.csv',
+  Cleveland_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Cleveland_MB_bert.csv',
+  DC_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/DC_HR_bert.csv',
+  DC_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/DC_MB_bert.csv',
+  LA_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/LA_HR_bert.csv',
+  LA_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/LA_MB_bert.csv',
+  Miami_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Miami_HR_bert.csv',
+  Miami_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Miami_MB_bert.csv',
+  Philly_HR = '/Users/helenalindsay/Documents/Spring_24/BERT/Philly_HR_bert.csv',
+  Philly_MB = '/Users/helenalindsay/Documents/Spring_24/BERT/Philly_MB_bert.csv'
+)
+
+# Read each CSV file, drop NA rows in 'bert_label'
+city_data <- lapply(file_paths, function(path) {
+  read_csv(path) %>% 
+    drop_na(bert_label)
+})
+
+
+calculate_avg_bert_score <- function(path) {
+  df <- read_csv(path)
+  df <- df %>% filter(!is.na(bert_score))  # Drop NA rows in 'bert_label' column
+  avg_score <- mean(df$bert_score, na.rm = TRUE)  # Calculate mean of 'bert_label'
+  return(avg_score)
+}
+
+# Calculate average bert_score for each city
+avg_scores <- sapply(file_paths, calculate_avg_bert_score)
+
+# Combine results into a data frame
+avg_scores_df <- data.frame(
+  city_name = names(avg_scores),
+  BERT = avg_scores
+)
+
+# Remove the row names column and sort by avg_bert_score in descending order
+avg_scores_df <- avg_scores_df %>%
+  rownames_to_column(var = "index") %>%
+  arrange(desc(BERT)) %>%
+  select(-index)  # Remove the index column
+
+
+# Define a function to convert city names based on mode
+convert_city <- function(city_name) {
+  switch(city_name,
+         "Brooklyn_MB" = "Brooklyn",
+         "Philly_MB" = "Philadelphia",
+         "Brooklyn_HR" = "Brooklyn",
+         "Philly_HR" = "Philadelphia",
+         "Cleveland_MB" = "Cleveland",
+         "Chicago_MB" = "Chicago",
+         "Boston_MB" = "Boston",
+         "DC_HR" = "Washington",
+         "Baltimore_MB" = "Baltimore",
+         "DC_MB" = "Washington",
+         "Miami_MB" = "Miami",
+         "LA_HR" = "Los Angeles",
+         "ATL_HR" = "Atlanta",
+         "Boston_HR" = "Boston",
+         "Baltimore_HR" = "Baltimore",
+         "LA_MB" = "Los Angeles",
+         "Cleveland_HR" = "Cleveland",
+         "ATL_MB" = "Atlanta",
+         "Chicago_HR" = "Chicago",
+         "Miami_HR" = "Miami",
+         # Default case: return city_name as is if no match
+         city_name
+  )
+}
+
+# Apply the mapping function to convert City names
+avg_scores_df$City <- mapply(convert_city, avg_scores_df$city_name)
+
+# Define a function to extract Mode from city_name
+extract_mode <- function(city_name) {
+  # Split the city_name by "_"
+  parts <- strsplit(city_name, "_")[[1]]
+  # Mode is the last element
+  mode <- parts[length(parts)]
+  return(mode)
+}
+
+# Apply the extract_mode function to create Mode column
+avg_scores_df$Mode <- sapply(avg_scores_df$city_name, extract_mode)
+
+
+
+avg_scores_df %>%
+  select(City, Mode, BERT) %>%
+  kable(caption = "Average BERT Scores by City and Mode",
+        col.names = c("City", "Mode", "BERT"),
+        format = "html") %>%  
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = F,
+                position = "center") %>%
+  column_spec(1, width = "4in", extra_css = "padding: 6px;") %>%  
+  column_spec(2, width = "3in", extra_css = "padding: 6px;") %>%  
+  column_spec(3, width = "3in", extra_css = "padding: 6px;") %>% 
+  kable_styling(font_size = 14)
+
+
+
+save(avg_scores_df, file = "/Users/helenalindsay/Documents/Spring_24/avg_scores_df.RData")
+
+```
+
+
+The BERT score distribution among the 200-250 threads per agency and mode is shown below. Most cities and modes tend to have scores primarily distributed between 0.25 and 0.5. However, some, like Boston MB and Brooklyn MB, exhibit a wider distribution of scores.
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+
+
+# Function to create BERT score histogram with adjusted title and axis labels sizes
+create_bert_histogram <- function(city_data, city_name) {
+  ggplot(city_data, aes(x = bert_score)) +
+    geom_histogram(binwidth = 0.1, fill = "skyblue", color = "black") +
+    labs(title = paste(city_name),
+         x = "BERT Score",
+         y = "Frequency") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 9),  # Adjust title size
+      axis.title.x = element_text(size = 8),  # Adjust x-axis label size
+      axis.title.y = element_text(size = 8)   # Adjust y-axis label size
+    )
+}
+
+
+
+# Create and store histograms for each city/mode in a list
+histograms <- lapply(names(city_data), function(city_name) {
+  city_data_single <- city_data[[city_name]]
+  create_bert_histogram(city_data_single, city_name)
+})
+
+# Combine all histograms into a single plot using patchwork
+combined_plots <- wrap_plots(histograms, ncol = 5)
+
+# Display the combined plot
+print(combined_plots)
+
+
+
+```
+
+
+
+## Evaluate credibility of the sentiment analysis
+
+To demonstrate the reliability of the BERT sentiment analysis, we present example threads with scores of 1 star and 5 stars. The agency and mode were selected at random.
+
+Examining the sample texts and sentiment scores, it appears that the BERT method used in our analysis effectively captures not only the sentiments of individual words but also negations.
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+# Define a function to get examples for specific BERT scores from selected cities
+get_examples_for_scores <- function(data_list, scores, num_cities = 1) {
+  # Sample cities randomly
+  selected_cities <- sample(names(data_list), num_cities)
+  
+  all_examples <- list()
+  
+  for (score in scores) {
+    # Ensure scores are in the format present in the data (e.g., "1 star", "5 stars")
+    score_pattern <- paste0(score, " stars?")
+    
+    # Filter and collect examples for the specific score
+    for (city_name in selected_cities) {
+      city_data <- data_list[[city_name]]
+      
+      examples <- city_data %>%
+        filter(str_detect(bert_label, score_pattern)) %>%
+        filter(!is.na(text) & text != "" & nchar(text) < 500) %>%  # Remove rows where text is null, empty, or too long
+        slice_head(n = 2)  # Display top 3 examples
+
+      if (nrow(examples) > 0) {
+        examples <- examples %>%
+          mutate(City = city_name, Score = score) %>%
+          select(City, text, bert_label)
+        
+        all_examples[[length(all_examples) + 1]] <- examples
+      }
+    }
+  }
+  
+  # Combine all examples into a single data frame
+  combined_examples <- bind_rows(all_examples)
+  
+  return(combined_examples)
+}
+
+
+# Call the function to get examples for BERT scores 1 and 5 from one randomly selected city
+examples_df <- get_examples_for_scores(city_data, c(1, 5), num_cities = 1)
+
+
+examples_df %>%
+  select("City", "text", "bert_label") %>%
+  kable(caption = "Examples for BERT Scores 1 and 5 from Selected City",
+        col.names = c("City", "Mode", "BERT"),
+        format = "html") %>%  
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = F,
+                position = "center") %>%
+  column_spec(1, width = "4in", extra_css = "padding: 6px;") %>%  
+  column_spec(2, width = "3in", extra_css = "padding: 6px;") %>%  
+  column_spec(3, width = "3in", extra_css = "padding: 6px;") %>% 
+  kable_styling(font_size = 14)
+
+
+```
+
+
+## Regression {.tabset}
+
+
+### Transit Agency data 
+
+
+**<font color=black> Agency </font>** : The transit agency's legal name.
+
+**<font color=black> City </font>** : The city in which the agency is headquartered.
+
+**<font color=black> Mode </font>** : A system for carrying transit passengers described by specific right-of-way (ROW), technology and operational features.
+
+**<font color=black> Primary.UZA.Population </font>** : The population of the urbanized area primarily served by the agency.
+
+**<font color=black> Service.Area.Sq.Miles </font>** : A measure of transit service in terms of area coverage (square miles).
+
+**<font color=black> Total.Mechanical.Failuress </font>** : The sum of major and other mechanical failures.
+
+**<font color=black> Maintenance_Facilities </font>** : Total of Under 200 Vehicles, 200 to 300 Vehicles, Over 300 Vehicles, and Heavy Maintenance Facilities.
+
+**<font color=black> Total_Miles </font>** : The sum of total track miles (sum of previous track mile-related columns) and 	
+total roadway miles.
+
+**<font color=black> Total.Stations </font>** : The sum of total number of stations.
+
+**<font color=black> Average Passenger Trip Length (APTL) </font>** : The average distance ridden by each passenger in a single trip, computed as passenger miles traveled (PMT) divided by unlinked passenger trips (UPT). May be determined by sampling, or calculated based on actual data.
+
+**<font color=black> Passengers per Vehicle Revenue Hour </font>** : The average number of passengers to board a vehicle/passenger car in one hour of service. For trains, this applies to passengers per hour on a single train car.
+
+**<font color=black> Total_Hours </font>** : `Actual Vehicles/ Passenger Car Hours` + `Train Revenue Hours`. The hours that vehicles/passenger cars travel while in revenue service plus deadhead hours + The hours that trains travel while in revenue service
+
+**<font color=black> Vehicle Length </font>** : The total length of the transit vehicles, measured in feet.
+
+**<font color=black> Seating Capacity </font>** : The number of seats that are actually installed in the vehicle, not including the driver, except for Vanpool modes.
+
+**<font color=black> Standing Capacity </font>** : The number of standing passengers that can be accommodated aboard the revenue vehicle during a normal full load (non-crush) in accordance with established loading policy or, in absence of a policy, the manufacturer’s rated standing capacity figures. 
+
+**<font color=black> Total Employee Count </font>** : The number of Full Time or Part Time employees of the transit agency at the end of the fiscal year.
+
+**<font color=black> Vehicles Operated at Maximum Service (VOMS) </font>** : "The number of revenue vehicles operated to meet the annual maximum service requirement. This is the revenue vehicle count during the peak season of the year; on the week and day, that maximum service is provided. 
+
+**<font color=black> Percent Agency Capital Responsibility </font>** : The percentage of capital responsibility the agency is responsible for. Transit agencies have direct capital responsibility for assets that they own, jointly own with another entity, or for assets that they are responsible for replacing, overhauling, refurbishing, or conducting major repairs on that asset, or the cost of those activities are itemized as a capital line item in the agency’s budget. 
+
+**<font color=black> Total Modal VRM </font>** : Agency allocation of vehicle revenue miles to the respective UZA (see Vehicle Revenue Miles).
+
+**<font color=black> Total Modal UPT </font>** : Agency allocation of unlinked passenger trips to the respective UZA (see Unlinked Passenger Trips).
+
+**<font color=black> %UnderThreshold </font>** : (`Units Under Performance Threshold (2022)`/`Total Units (2022)`)*100. 
+The total units of a particular asset that has either met or exceeded its useful life benchmark (vehicle assets), scores below a 3.0 on the TERM Scale (facilities), or is operating under a performance restriction (rail) divided by the total units of a particular asset.
+
+### External data 
+
+**<font color=black> avg_bert_score </font>** : The average BERT score was obtained by running the Reddit threads through the BERT algorithm then aggregating the scores by each transit agency and mode.
+
+**<font color=black> Capacity </font>** : The Capacity Score was determined by calculating the per capita seat-miles, which involves the following formula:
+Per capita capacity = (Total daily seats on a transit line × Route-miles of transit line in the zone) / (Total resident population + Employment).
+This score was computed as part of the MS-GIST Capstone Project using ArcGIS Pro.
+
+**<font color=black> Frequency </font>** : The Frequency Score represents the total daily number of transit services traversing the zone. It was determined using the 'Calculate Transit Service Frequency' tool, which accounted for a 24-hour window on a Tuesday. This score was computed as part of the MS-GIST Capstone Project using ArcGIS Pro.
+
+**<font color=black> Coverage </font>** : The Route Coverage Score was calculated by dividing the number of stops within a Traffic Analysis Zone (TAZ) by its land area in square miles. The score for each tract was derived using the 'Summarize Within' tool available in ArcGIS Pro. This score was computed as part of the MS-GIST Capstone Project.
+
+**<font color=black> LITA </font>** : The Local Index of Transit Availability (LITA), developed by  Rood (1998) , provides a comprehensive measure of transit service intensity or accessibility within a specific area. It integrates three essential aspects of transit service—route coverage, frequency, and capacity—to offer a detailed understanding of how effectively public transit meets the needs of the population.
+
+The LITA Score was computed by averaging three standardized metrics: Frequency, Coverage, and Capacity, then adding 5.5. This approach guarantees a positive score and provides a holistic measure of how route coverage, frequency, and capacity contribute to transit accessibility. This score was computed for each agency and mode as part of the MS-GIST Capstone Project.
+
+
+
+
+
+### Correlation Analysis
+
+Collinearity is a linear association between two predictors. Multicollinearity is a situation where two or more predictors are highly linearly related. In general, an absolute correlation coefficient of >0.7 among two or more predictors indicates the presence of multicollinearity 
+
+(M, R. (2019, July 15). Correlation and collinearity - how they can make or break a model. Medium. https://blog.clairvoyantsoft.com/correlation-and-collinearity-how-they-can-make-or-break-a-model-9135fbe6936a)
+
+After removing variables from the dataset that are contextually correlated with each other — such as `Seating Capacity`/`Standing Capacity`, `Coverage score`, and `LITA score` — and iterating through the other variables that showed high correlations, the project identified a subset of variables where the maximum correlation remained below 0.7.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/DATA.RData")
+
+# Assuming DATA is your data frame
+filtered_data <- DATA %>%
+  select_if(is.numeric)%>%
+  select(-c(Total_Hours, `Total Modal VRM (2022)`, `Seating Capacity`, `Standing Capacity`, Norm..Coverage, Norm..Frequency, Norm..Capacity,  LITA.normalized, `Total Modal UPT (2022)`, Frequency,Capacity,Coverage, avg_bert_score,Primary..UZA.Population, Service.Area.Sq.Miles, Total_Miles,`Total Stations`, `ModeTOS Vehicles Operated in Maximum Service (2022)` ))
+
+
+# Calculate correlation matrix
+correlation_matrix <- cor(filtered_data, use = "complete.obs")
+
+# Find highly correlated pairs
+correlations <- as.data.frame(as.table(correlation_matrix))
+names(correlations) <- c("Var1", "Var2", "Correlation")
+
+# Exclude self-correlations and sort by absolute correlation
+correlations <- correlations %>%
+  filter(Var1 != Var2) %>%
+  arrange(desc(abs(Correlation)))
+
+# View the top correlated pairs
+top_correlated <- correlations[1:50, ]  # Adjust the number as needed
+```
+
+```{r, message=FALSE, warning=FALSE}
+kable(head(top_correlated))
+```
+
+
+### VIF
+
+Variance inflation factor (VIF) helps a formal detection-tolerance for multicollinearity. VIF of 5 or 10 and above (depends on the business problem) indicates a multicollinearity problem.
+
+(M, R. (2019, July 15). Correlation and collinearity - how they can make or break a model. Medium. https://blog.clairvoyantsoft.com/correlation-and-collinearity-how-they-can-make-or-break-a-model-9135fbe6936a)
+
+After iterating through the variables with high VIF values, the project identified a subset of variables where the maximum VIF value remained below 10.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`,
+  data = DATA)
+```
+  
+```{r, message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
+library(car)
+initial_model <- lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`,
+  data = DATA)
+
+vif_values <- vif(initial_model)
+
+sorted_vif_values <- sort(vif_values, decreasing = TRUE)
+
+# Convert sorted VIF values to a data frame
+sorted_vif_df1 <- data.frame(
+  Variable = names(sorted_vif_values),
+  VIF = sorted_vif_values
+)
+save(sorted_vif_df1, file = "/Users/helenalindsay/Documents/Spring_24/sorted_vif_df1.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/sorted_vif_df1.RData")
+# Display the sorted VIF values using kable
+kable(sorted_vif_df1, col.names = c("Variable", "VIF"), row.names = FALSE,caption = "Sorted VIF Values")
+
+```
+
+
+
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`- Total_Hours,
+  data = DATA)
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
+initial_model <- lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`- Total_Hours,
+  data = DATA)
+
+vif_values <- vif(initial_model)
+
+sorted_vif_values <- sort(vif_values, decreasing = TRUE)
+
+# Convert sorted VIF values to a data frame
+sorted_vif_df2 <- data.frame(
+  Variable = names(sorted_vif_values),
+  VIF = sorted_vif_values
+)
+save(sorted_vif_df2, file = "/Users/helenalindsay/Documents/Spring_24/sorted_vif_df2.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/sorted_vif_df2.RData")
+# Display the sorted VIF values using kable
+kable(sorted_vif_df2, col.names = c("Variable", "VIF"), row.names = FALSE,caption = "Sorted VIF Values")
+
+```
+
+### Regression
+
+Once a subset of variables with a correlation below 0.7 and a maximum VIF value below 10 was identified, this subset was used to fit the regression model with the BERT score as the dependent variable.
+
+The adjusted R-squared value is 0.626, indicating that the model explains 62.6% of the variance in the dependent variable. The variables `Total.Mechanical.Failures` and `Total Employee Count` are statistically significant in this model.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/DATA.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+model <- lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`- Total_Hours,
+  data = DATA)
+
+save(model, file = "/Users/helenalindsay/Documents/Spring_24/model.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/DATA.RData")
+load("/Users/helenalindsay/Documents/Spring_24/model.RData")
+
+# Extract summary information
+model_summary <- summary(model)
+
+# Convert coefficients to a data frame and include p-values
+model_coef <- as.data.frame(model_summary$coefficients)
+colnames(model_coef) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+
+# Round the p-values to four decimal places and add asterisks based on the threshold of 0.05
+model_coef$`Pr(>|t|)` <- sapply(model_coef$`Pr(>|t|)`, function(p) {
+  rounded_p <- formatC(p, format = "f", digits = 4)
+  if (p < 0.05) {
+    paste0(rounded_p, "*")
+  } else {
+    rounded_p
+  }
+})
+
+# Extract R-squared and other metrics
+r_squared <- model_summary$r.squared
+adj_r_squared <- model_summary$adj.r.squared
+f_statistic <- model_summary$fstatistic
+f_statistic_value <- f_statistic[1]
+f_statistic_df1 <- f_statistic[2]
+f_statistic_df2 <- f_statistic[3]
+p_value <- pf(f_statistic_value, f_statistic_df1, f_statistic_df2, lower.tail = FALSE)
+
+# Create a summary table for R-squared and other metrics
+model_metrics <- data.frame(
+  Metric = c("R-squared", "Adjusted R-squared", "F-statistic", "F-statistic p-value"),
+  Value = c(r_squared, adj_r_squared, f_statistic_value, p_value)
+)
+
+# Display the coefficients and metrics using kableExtra for better formatting
+library(kableExtra)
+
+kable(model_coef, format = "html", caption = "Model Coefficients") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  scroll_box(width = "100%")
+
+kable(model_metrics, format = "html", caption = "Model Summary Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  scroll_box(width = "100%")
+
+```
+
+
+### Stepwise Regression
+
+The project also implemented a stepwise regression model, which resulted in an improved adjusted R-squared value of 0.707. In this model, the significant variables are `Total Mechanical Failures`, `Average Passenger Trip Length (APTL)`, `Total Employee Count`, and `Average Percent Agency Capital Responsibility (2022)`. The `LITA` variable, with a p-value of 0.072, would be considered statistically significant at a 10% confidence level.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/DATA.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+step_model <- step(
+  lm(avg_bert_score ~ . - City - Mode - State - Agency - Service.Area.Sq.Miles - Primary..UZA.Population - Total_Miles - `Total Stations` - `Seating Capacity` - `Standing Capacity` - Norm..Coverage - Norm..Frequency - Norm..Capacity - LITA.normalized -Capacity-Frequency-Coverage -`ModeTOS Vehicles Operated in Maximum Service (2022)`- `Total Modal UPT (2022)` - `Total Modal VRM (2022)`- Total_Hours,
+  data = DATA),
+  direction = "both", 
+  trace = 0
+)
+
+save(step_model, file = "/Users/helenalindsay/Documents/Spring_24/step_model.RData")
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+load("/Users/helenalindsay/Documents/Spring_24/step_model.RData")
+
+# Extract summary information
+model_summary <- summary(step_model)
+
+# Convert coefficients to a data frame and include p-values
+model_coef <- as.data.frame(model_summary$coefficients)
+colnames(model_coef) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+
+# Round the p-values to four decimal places and add asterisks based on the threshold of 0.05
+model_coef$`Pr(>|t|)` <- sapply(model_coef$`Pr(>|t|)`, function(p) {
+  rounded_p <- formatC(p, format = "f", digits = 4)
+  if (p < 0.05) {
+    paste0(rounded_p, "*")
+  } else {
+    rounded_p
+  }
+})
+
+# Extract R-squared and other metrics
+r_squared <- model_summary$r.squared
+adj_r_squared <- model_summary$adj.r.squared
+f_statistic <- model_summary$fstatistic
+f_statistic_value <- f_statistic[1]
+f_statistic_df1 <- f_statistic[2]
+f_statistic_df2 <- f_statistic[3]
+p_value <- pf(f_statistic_value, f_statistic_df1, f_statistic_df2, lower.tail = FALSE)
+
+# Create a summary table for R-squared and other metrics
+model_metrics <- data.frame(
+  Metric = c("R-squared", "Adjusted R-squared", "F-statistic", "F-statistic p-value"),
+  Value = c(r_squared, adj_r_squared, f_statistic_value, p_value)
+)
+
+# Display the coefficients and metrics using kableExtra for better formatting
+library(kableExtra)
+
+kable(model_coef, format = "html", caption = "Model Coefficients") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  scroll_box(width = "100%")
+
+kable(model_metrics, format = "html", caption = "Model Summary Metrics") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  scroll_box(width = "100%")
+```
+
+
+
+
+
+
+
+## Discussion of insights {.tabset}
+
+The regression model was developed using a subset of variables that maintained a correlation below 0.7 and had a maximum Variance Inflation Factor (VIF) value under 10. With the BERT score as the dependent variable, the model aimed to explain the sentiment towards various public transit modes and agencies based on operational data, including:
+
+`Vehicle Length`
+`Passengers per Vehicle Revenue Hour`
+`Total Employee Count`
+`%UnderThreshold`	
+`Maintenance_Facilities	`
+`Average Passenger Trip Length (APTL)`	
+`Total.Mechanical.Failures`
+`Average Percent Agency Capital Responsibility (2022)`
+`LITA`
+
+The adjusted R-squared value for this model was 0.626, indicating that the model explains 62.6% of the variance in the dependent variable. The variables `Total.Mechanical.Failures` and `Total Employee Count` were statistically significant in this model.
+
+
+
+A stepwise regression model was also developed in an attempt to increase the adjusted R-squared value and model strength. Using the following variables, the model achieved an improved adjusted R-squared value of 0.707. 
+
+`Total.Mechanical.Failures`
+`Average Passenger Trip Length (APTL)`
+`Total Employee Count`
+`Average Percent Agency Capital Responsibility (2022)`
+`LITA`
+`%UnderThreshold`
+
+In this model, the significant variables were `Total Mechanical Failures`, `Average Passenger Trip Length (APTL)`, `Total Employee Count`, and `Average Percent Agency Capital Responsibility (2022)`. The `LITA` variable, with a p-value of 0.072, would be considered statistically significant at a 10% confidence level.
+
+
+
+## Conclusion {.tabset}
+
+
+The stepwise regression model shows that `Total Mechanical Failures` has a slightly negative relationship with the BERT score, indicating that fewer mechanical failures are associated with a more positive public perception of the transit system. Similarly, `Average Passenger Trip Length (APTL)` also has a slightly negative relationship with the BERT score, meaning that shorter passenger trips correlate with a more favorable public sentiment. 
+Additionally, `Average Percent Agency Capital Responsibility (2022)` is negatively correlated with the BERT score, suggesting that as an agency's capital responsibility increases, public sentiment tends to decline. In contrast, `Total Employee Count` is positively correlated with the sentiment score, indicating that a higher number of employees in an agency is associated with a more positive public perception. The stepwise regression model also indicates that the `LITA` score, which measures the spatial accessibility, frequency, and capacity of a transit system, has a positive correlation with sentiment at a 10% confidence interval. This suggests that as the LITA score improves, public sentiment towards the transit system becomes more positive. 
+
+
+
+Based on the findings from the stepwise regression model, it appears that transit agencies could enhance public perception by focusing on several key areas. These areas include minimizing mechanical failures, optimizing passenger trip lengths, managing capital responsibilities, increasing employee numbers, and improving the LITA score. The following suggestions are derived from the results:
+
+**<font>Reduce Mechanical Failures: </font>**
+
+Preventative Maintenance: It may be beneficial to implement and maintain rigorous preventative maintenance schedules to reduce mechanical failures. Regular vehicle inspections and servicing can help prevent breakdowns and improve reliability.
+
+Modernization of Fleet: Investing in modern, more reliable vehicles and equipment might significantly decrease mechanical issues and enhance service dependability.
+
+**<font>Optimize Average Passenger Trip Length: </font>**
+
+Network Design: Agencies might consider redesigning routes to minimize the distance passengers need to travel. Implementing more direct routes or express services could help reduce trip lengths.
+
+Transit-Oriented Development: Promoting and supporting transit-oriented development could bring key destinations closer to transit hubs, thereby reducing the need for long commutes.
+
+**<font>Manage Capital Responsibilities: </font>**
+
+Strategic Partnerships: Collaborating with local, state, and federal agencies to share the burden of capital costs might be effective. Leveraging partnerships and securing grants can help manage financial responsibilities more efficiently.
+
+Cost Management: Adopting efficient budgeting and cost management practices could ensure that capital projects are completed on time and within budget, thereby mitigating negative public perception related to high capital responsibilities.
+
+**<font>Increase Employee Count: </font>**
+
+Hiring Initiatives: It may be advantageous to invest in hiring more personnel, particularly in customer service and operational roles, to improve service delivery and responsiveness.
+
+Training and Development: Providing comprehensive training and development programs could ensure employees are well-equipped to deliver high-quality service and handle customer inquiries effectively.
+
+**<font>Improve LITA Score: </font>**
+
+Accessibility Enhancements: Ensuring that transit services are easily accessible to all populations, including those with disabilities, might improve public perception.
+
+Frequency and Capacity: Increasing the frequency and capacity of services could reduce waiting times and overcrowding, leading to a better overall experience for passengers.
+
+Coverage Expansion: Expanding service coverage to underserved areas might ensure that more people have access to reliable public transit options.
+
+
+
+
+By focusing on these areas, transit agencies could potentially enhance the overall quality and reliability of their services, leading to improved public perception and greater satisfaction among riders.
+
+
+
